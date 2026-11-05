@@ -3,60 +3,30 @@ import certifi
 from dotenv import load_dotenv
 
 import uuid
+from pathlib import Path
+import traceback
+import uvicorn
 
-import psycopg
-from psycopg.rows import dict_row
-from langgraph.checkpoint.postgres import PostgresSaver
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+
+
 from langchain_core.messages import HumanMessage
-from graph.workflow import app as graph
-
-
+from backend.graph.workflow import app as travel_graph
 
 load_dotenv()
 
 os.environ["SSL_CERT_FILE"] = certifi.where()
 os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 
-
-
-
-def get_database_url():
-    database_url = os.getenv("DATABASE_URL")
-
-    if not database_url:
-        raise ValueError(
-            "DATABASE_URL is missing. Please add your Render PostgreSQL External Database URL to .env"
-        )
-
-    if "sslmode=" not in database_url:
-        separator = "&" if "?" in database_url else "?"
-        database_url = f"{database_url}{separator}sslmode=require"
-
-    return database_url
-
-# =========================
-# PostgreSQL Checkpointer
-# =========================
-DATABASE_URL = get_database_url()
-
-_conn = psycopg.connect(
-    DATABASE_URL,
-    autocommit=True,
-    row_factory=dict_row
-)
-
-checkpointer = PostgresSaver(_conn)
-checkpointer.setup()
-
-travel_graph = graph.compile(checkpointer=checkpointer)
-
-
-
-# =========================
 # Function for FastAPI
-# =========================
 
 def run_travel_agent(user_input: str, thread_id: str | None = None):
+    
+
     if not thread_id:
         thread_id = f"user_{uuid.uuid4().hex}"
 
@@ -90,3 +60,111 @@ def run_travel_agent(user_input: str, thread_id: str | None = None):
         "itinerary": result.get("itinerary", ""),
         "llm_calls": result.get("llm_calls", 0),
     }
+    
+    
+
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+print(f"BASE_DIR: {BASE_DIR}")
+
+app = FastAPI(
+    title="TripMate AI",
+    description="LangGraph Multi-Agent Travel Planner with FastAPI Frontend",
+    version="1.0.0"
+)
+
+
+app.mount(
+    "/static",
+    StaticFiles(directory=str(BASE_DIR / "static")),
+    name="static"
+)
+
+
+templates = Jinja2Templates(
+    directory=str(BASE_DIR / "templates")
+)
+
+
+
+class TravelRequest(BaseModel):
+    message: str
+    thread_id: str | None = None
+
+
+
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={}
+    )
+
+
+@app.post("/api/travel")
+async def travel_planner(request_data: TravelRequest):
+    try:
+        user_message = request_data.message.strip()
+
+        if not user_message:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "success": False,
+                    "error": "Message cannot be empty."
+                }
+            )
+
+        result = run_travel_agent(
+            user_input=user_message,
+            thread_id=request_data.thread_id
+        )
+
+        return JSONResponse(
+            content={
+                "success": True,
+                "thread_id": result["thread_id"],
+                "answer": result["answer"],
+                "flight_results": result["flight_results"],
+                "hotel_results": result["hotel_results"],
+                "itinerary": result["itinerary"],
+                "llm_calls": result["llm_calls"],
+            }
+        )
+
+    except Exception as e:
+        print("ERROR:", e)
+        traceback.print_exc()
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": str(e)
+            }
+        )
+
+
+
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "ok",
+        "message": "AI Travel Planner API is running"
+    }
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    return JSONResponse(content={})
+
+
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "app:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=True
+    )

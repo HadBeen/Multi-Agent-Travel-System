@@ -16,7 +16,7 @@ from langchain_groq import ChatGroq
 
 from tools.flight_tool import search_flights
 from tools.tavily_tool import tavily_search
-from graph.states import TravelState
+from backend.graph.states import TravelState
 
 
 # =========================
@@ -24,7 +24,7 @@ from graph.states import TravelState
 # =========================
 
 llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
+    model="qwen/qwen3.8-27b",
     api_key=GROQ_API_KEY
 )
 
