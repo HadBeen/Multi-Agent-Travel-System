@@ -24,7 +24,7 @@ from backend.graph.states import TravelState
 # =========================
 
 llm = ChatGroq(
-    model="qwen/qwen3.8-27b",
+    model="openai/gpt-oss-120b",
     api_key=GROQ_API_KEY
 )
 
