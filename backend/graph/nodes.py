@@ -1,5 +1,7 @@
 import os
+import asyncio
 from dotenv import load_dotenv
+
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
@@ -15,8 +17,10 @@ from langchain_core.messages import (
 from langchain_groq import ChatGroq
 
 from tools.flight_tool import search_flights
-from tools.tavily_tool import tavily_search
+# from tools.tavily_tool import tavily_search
 from backend.graph.states import TravelState
+
+from mcp_servers.tavily_server import tavily_mcp_search
 
 
 # =========================
@@ -54,7 +58,7 @@ def flight_agent(state: TravelState):
 
 def hotel_agent(state: TravelState):
     query = f"Best hotels for {state['user_query']}"
-    hotel_results = tavily_search(query)
+    hotel_results = asyncio.run(tavily_mcp_search(query)) 
 
     return {
         "hotel_results": hotel_results,
