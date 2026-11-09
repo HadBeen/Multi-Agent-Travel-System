@@ -1,4 +1,3 @@
-# test_tools.py (project root)
 import asyncio
 from backend.mcp_client.client import get_all_tools   
 
