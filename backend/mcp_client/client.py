@@ -16,8 +16,7 @@ AVIATION_ENV = os.environ.copy()
 AVIATION_ENV["AVIATION_STACK_API_KEY"] = (AVIATIONSTACK_API_KEY)
 
 BASE_DIR = Path(__file__).resolve().parents[2]   # multi-agent-system (client.py is in backend/mcp_client/)
-WEATHER_SERVER_PATH = BASE_DIR / "mcp_servers" / "weather_costum_server.py"
-
+WEATHER_SERVER_PATH = BASE_DIR / "mcp_servers" / "weather_custom_mcp.py"
 
 Client = MultiServerMCPClient(
     {
@@ -27,11 +26,11 @@ Client = MultiServerMCPClient(
                     "url": f"https://mcp.tavily.com/mcp/?tavilyApiKey={TAVILY_API_KEY}"
                 },
         "Aviationstack MCP":
-                {         
-                    "transport":"stdio",
+                {   
+                    "transport": "stdio",
                     "command": "uvx",
-                    "args": ["Aviationstack MCP"],
-                    "env": AVIATION_ENV
+                    "args": ["aviationstack-mcp"],
+                          "env": {"AVIATION_STACK_API_KEY": f"{AVIATIONSTACK_API_KEY}" }
                 },
         "weather": 
                 {
@@ -57,9 +56,8 @@ async def get_all_tools():
     A broken server will no longer prevent the other
     working servers from loading.
     """
-
     all_tools = []
-
+    print(WEATHER_SERVER_PATH)
     for server_name in (
         "tavily",
         "Aviationstack MCP",
@@ -86,3 +84,5 @@ async def get_all_tools():
                 print("  LEAF:", type(leaf).__name__, "-", leaf)
 
     return all_tools
+
+

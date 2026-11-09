@@ -1,9 +1,5 @@
-from tools.tavily_tool import tavily_search
-from tools.flight_tool import  search_flights
+# test_tools.py (project root)
+import asyncio
+from backend.mcp_client.client import get_all_tools   
 
-res = tavily_search("hotels in algeria")
-print(res)
-
-res = search_flights('plan a 3 weeks china trip from france ')
-
-print(res)
+asyncio.run(get_all_tools())

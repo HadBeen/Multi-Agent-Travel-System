@@ -1,7 +1,7 @@
-from backend.mcp_client.client import Client
-
+from backend.mcp_client.client import Client 
 
 aviation_tools = {}
+
 
 
 async def initialize_aviation_tools():
@@ -11,9 +11,9 @@ async def initialize_aviation_tools():
     if aviation_tools:
         return
 
-    # Load only AviationStack.
-    # Tavily and Weather will not be initialized here.
+  
     try:
+        # print({name: cfg.get("transport") for name, cfg in Client.connections.items()})
         tools = await Client.get_tools(server_name="Aviationstack MCP")
     except BaseException as e:
         print("AVIATION INIT FAILED:", type(e).__name__, e)
@@ -31,10 +31,8 @@ async def initialize_aviation_tools():
         )
 
 
-async def aviation_mcp_call(
-    tool_name: str,
-    tool_args: dict = None
-):
+async def aviation_mcp_call(tool_name: str,tool_args: dict = None):
+    
     await initialize_aviation_tools()
 
     tool = aviation_tools.get(tool_name)
@@ -56,3 +54,4 @@ async def aviation_mcp_call(
     )
 
     return result
+

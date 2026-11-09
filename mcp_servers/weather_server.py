@@ -3,7 +3,7 @@ from backend.mcp_client.client import Client
 
 
 
-BASE_DIR = Path(__file__).resolve().parents[2]   # multi-agent-system
+BASE_DIR = Path(__file__).resolve().parents[1]   
 WEATHER_SERVER_PATH = BASE_DIR / "mcp_servers" / "weather_custom_mcp.py"
 
 weather_tool = None
@@ -90,5 +90,4 @@ async def forecast_mcp_search(city: str):
             "city": city
         }
     )
-
     return result
