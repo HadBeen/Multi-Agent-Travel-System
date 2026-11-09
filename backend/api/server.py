@@ -31,8 +31,6 @@ nest_asyncio.apply()
 # Function for FastAPI
 
 def run_travel_agent(user_input: str, thread_id: str | None = None):
-    
-
     if not thread_id:
         thread_id = f"user_{uuid.uuid4().hex}"
 
@@ -50,6 +48,7 @@ def run_travel_agent(user_input: str, thread_id: str | None = None):
             "user_query": user_input,
             "flight_results": "",
             "hotel_results": "",
+            "weather_results": "",
             "itinerary": "",
             "llm_calls": 0
         },
@@ -63,10 +62,10 @@ def run_travel_agent(user_input: str, thread_id: str | None = None):
         "answer": final_answer,
         "flight_results": result.get("flight_results", ""),
         "hotel_results": result.get("hotel_results", ""),
+        "weather_results": result.get("weather_results", ""),
         "itinerary": result.get("itinerary", ""),
         "llm_calls": result.get("llm_calls", 0),
     }
-    
     
 
 
@@ -74,7 +73,7 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 print(f"BASE_DIR: {BASE_DIR}")
 
 app = FastAPI(
-    title="TripMate AI",
+    title="travel agent",
     description="LangGraph Multi-Agent Travel Planner with FastAPI Frontend",
     version="1.0.0"
 )
