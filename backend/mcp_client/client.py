@@ -1,6 +1,8 @@
 import os
+import sys
 from dotenv import load_dotenv
 import certifi
+from pathlib import Path
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
 os.environ["SSL_CERT_FILE"] = certifi.where()
@@ -10,6 +12,11 @@ load_dotenv()
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 AVIATIONSTACK_API_KEY = os.getenv("AVIATIONSTACK_API_KEY")
+AVIATION_ENV = os.environ.copy()
+AVIATION_ENV["AVIATION_STACK_API_KEY"] = (AVIATIONSTACK_API_KEY)
+
+BASE_DIR = Path(__file__).resolve().parents[2]   # multi-agent-system (client.py is in backend/mcp_client/)
+WEATHER_SERVER_PATH = BASE_DIR / "mcp_servers" / "weather_costum_server.py"
 
 
 Client = MultiServerMCPClient(
@@ -23,13 +30,59 @@ Client = MultiServerMCPClient(
                 {         
                     "transport":"stdio",
                     "command": "uvx",
-                    "args": ["aviationstack-mcp"],
-                    "env": {f"AVIATION_STACK_API_KEY": "{AVIATIONSTACK_API_KEY}"}
+                    "args": ["Aviationstack MCP"],
+                    "env": AVIATION_ENV
+                },
+        "weather": 
+                {
+                    "transport": "stdio",
+                    # Use the same Python environment that runs app.py.
+                    "command": sys.executable,
+                    "args": [str(WEATHER_SERVER_PATH)],
                 }
     }
 )
 
+def leaf_errors(e):
+    if isinstance(e, BaseExceptionGroup):
+        for sub in e.exceptions:
+            yield from leaf_errors(sub)
+    else:
+        yield e
 
 async def get_all_tools():
-    tools = await Client.get_tools()
-    return tools
+    """
+    Load each MCP server separately.
+
+    A broken server will no longer prevent the other
+    working servers from loading.
+    """
+
+    all_tools = []
+
+    for server_name in (
+        "tavily",
+        "Aviationstack MCP",
+        "weather"
+    ):
+        try:
+            tools = await Client.get_tools(
+                server_name=server_name
+            )
+
+            all_tools.extend(tools)
+
+            print(
+                f"\nAvailable tools from "
+                f"{server_name} MCP:\n"
+            )
+
+            for tool in tools:
+                print(tool.name)
+
+        except BaseException as error:
+            print(f"\nCould not connect to {server_name} MCP:")
+            for leaf in leaf_errors(error):
+                print("  LEAF:", type(leaf).__name__, "-", leaf)
+
+    return all_tools
