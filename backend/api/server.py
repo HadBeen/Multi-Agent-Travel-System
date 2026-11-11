@@ -74,7 +74,7 @@ print(f"BASE_DIR: {BASE_DIR}")
 
 app = FastAPI(
     title="travel agent",
-    description="LangGraph Multi-Agent Travel Planner with FastAPI Frontend",
+    description="LangGraph Multi-Agent Travel Planner with FastAPI ",
     version="1.0.0"
 )
 

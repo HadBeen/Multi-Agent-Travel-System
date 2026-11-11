@@ -14,12 +14,12 @@ from langchain_core.messages import (
 )
 from langchain_groq import ChatGroq
 
-# from tools.flight_tool import search_flights
+from tools.flight_tool import search_flights
 # from tools.tavily_tool import tavily_search
 from backend.graph.states import TravelState
 
 from mcp_servers.tavily_server import tavily_mcp_search
-from mcp_servers.flight_server import aviation_mcp_call
+# from mcp_servers.flight_server import aviation_mcp_call
 from mcp_servers.weather_server import weather_mcp_search, forecast_mcp_search
 
 
@@ -49,21 +49,37 @@ def extract_destination(query: str):
 
 
 # =========================
-# Flight Agent
+# Flight Agent 
+# =========================
+def flight_agent(state: TravelState):
+    query = state["user_query"]
+    print(query)
+    flight_data = search_flights(query)
+    print(flight_data)
+
+    return {
+        "flight_results": flight_data,
+        "messages": [
+            AIMessage(content="Flight results fetched.")
+        ],
+        "llm_calls": state.get("llm_calls", 0) + 1
+    }
+# =========================
+# Flight Agent MCP
 # =========================
 PROMPTS_DIR = Path(__file__).resolve().parents[1] / "prompts"
 
 FLIGHT_AGENT_PROMPT = (PROMPTS_DIR / "flight_agent.txt").read_text()
 
-def flight_agent(state: TravelState):
+def flight_agent_mcp(state: TravelState):
     print("\nINSIDE FLIGHT AGENT\n")
 
     query = state["user_query"]
 
     try:
 
-        airports = asyncio.run(aviation_mcp_call("list_airports"))
-        airlines = asyncio.run(aviation_mcp_call("list_airlines"))
+        airports = search_flights("list_airports")
+        airlines = search_flights("list_airlines")
 
 
         print("\nAIRPORTS:", airports)
